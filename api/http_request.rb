@@ -14,23 +14,23 @@ class HttpRequest # rubocop:disable Style/Documentation
 
   protected
 
-  def request(body: {}, verbose: false) # rubocop:disable Metrics/MethodLength
-    body = body.to_h
-    body = body.delete_if { |_k, v| v.nil? || v.to_s.empty? }
-    body = body.to_json
-
-    response = Typhoeus::Request.new(
+  def request(verbose: false)
+    @response = Typhoeus::Request.new(
       "#{@base_url}/#{@url}",
       method: :get,
-      body:,
       headers: { 'Content-Type': 'application/json' },
       verbose:
     ).run
+    parse_response
+  end
 
-    if response.success?
-      Models::Result.new(response.body) unless response.body.empty?
+  private
+
+  def parse_response
+    if @response.success?
+      Models::Result.new(JSON.parse(@response.body)) unless @response.body.empty?
     else
-      error_api = JSON.parse(response.body)
+      error_api = JSON.parse(@response.body)
       { error: error_api }
     end
   end
